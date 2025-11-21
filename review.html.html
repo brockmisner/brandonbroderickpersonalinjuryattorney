@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Firm Review Tracking Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .metric-label {
+            color: #718096;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }
+        
+        .metric-value {
+            color: #2d3748;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .metric-change {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .metric-change.positive {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .metric-change.negative {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .metric-change.neutral {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .chart-title {
+            color: #2d3748;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .table-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .data-table th {
+            background: #f7fafc;
+            color: #2d3748;
+            font-weight: 600;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        
+        .data-table tr:hover {
+            background: #f7fafc;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge.alert {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .badge.warning {
+            background: #feebc8;
+            color: #744210;
+        }
+        
+        .badge.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .rating {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        .rating.high {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .rating.medium {
+            background: #feebc8;
+            color: #744210;
+        }
+        
+        .rating.low {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+        
+        .select-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .select-wrapper select {
+            appearance: none;
+            padding: 10px 40px 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 5px;
+            background: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        
+        .timestamp {
+            margin-left: auto;
+            color: #718096;
+            font-size: 0.875rem;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .metric-value {
+                font-size: 2rem;
+            }
+        }
+        
+        .alert-box {
+            background: #fed7d7;
+            border-left: 4px solid #c53030;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .alert-box.show {
+            display: block;
+        }
+        
+        .alert-box .alert-title {
+            color: #742a2a;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .alert-box .alert-message {
+            color: #c53030;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Law Firm Review Tracking System</h1>
+            <div class="subtitle">Real-time monitoring of 120+ locations</div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshData()">Refresh Data</button>
+            <button class="btn btn-secondary" onclick="exportReport()">Export Report</button>
+            <div class="select-wrapper">
+                <select id="timeRange" onchange="updateTimeRange()">
+                    <option value="24h">Last 24 Hours</option>
+                    <option value="7d" selected>Last 7 Days</option>
+                    <option value="30d">Last 30 Days</option>
+                    <option value="90d">Last 90 Days</option>
+                </select>
+            </div>
+            <div class="timestamp">Last updated: <span id="lastUpdate">2024-11-20 09:15</span></div>
+        </div>
+        
+        <!-- Alert Box -->
+        <div id="alertBox" class="alert-box">
+            <div class="alert-title">Critical Alerts</div>
+            <div class="alert-message" id="alertMessage"></div>
+        </div>
+        
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Total Locations</div>
+                <div class="metric-value">120</div>
+                <span class="metric-change neutral">Active</span>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Total Reviews</div>
+                <div class="metric-value">48,532</div>
+                <span class="metric-change positive">+245 (24h)</span>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Average Rating</div>
+                <div class="metric-value">4.3</div>
+                <span class="metric-change negative">-0.1 (7d)</span>
+            </div>
+            
+            <div class="metric-card">
+                <div class="metric-label">Reviews Removed</div>
+                <div class="metric-value">23</div>
+                <span class="metric-change negative">Today</span>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-title">Review Trends (7 Days)</div>
+                <canvas id="trendChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-title">Rating Distribution</div>
+                <canvas id="ratingChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Top Locations Table -->
+        <div class="table-card">
+            <div class="chart-title">Top Performing Locations</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>City</th>
+                        <th>Rating</th>
+                        <th>Reviews</th>
+                        <th>Change (7d)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Law Firm - Miami Downtown</td>
+                        <td>Miami, FL</td>
+                        <td><span class="rating high">4.8</span></td>
+                        <td>1,245</td>
+                        <td><span class="metric-change positive">+15</span></td>
+                        <td><span class="badge success">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Orlando Central</td>
+                        <td>Orlando, FL</td>
+                        <td><span class="rating high">4.7</span></td>
+                        <td>892</td>
+                        <td><span class="metric-change positive">+8</span></td>
+                        <td><span class="badge success">Excellent</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Tampa Bay</td>
+                        <td>Tampa, FL</td>
+                        <td><span class="rating high">4.6</span></td>
+                        <td>756</td>
+                        <td><span class="metric-change positive">+12</span></td>
+                        <td><span class="badge success">Good</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Jacksonville North</td>
+                        <td>Jacksonville, FL</td>
+                        <td><span class="rating medium">4.2</span></td>
+                        <td>523</td>
+                        <td><span class="metric-change neutral">0</span></td>
+                        <td><span class="badge warning">Monitor</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Tallahassee</td>
+                        <td>Tallahassee, FL</td>
+                        <td><span class="rating medium">3.9</span></td>
+                        <td>412</td>
+                        <td><span class="metric-change negative">-5</span></td>
+                        <td><span class="badge warning">Monitor</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Locations Needing Attention -->
+        <div class="table-card">
+            <div class="chart-title">Locations Needing Attention</div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Issue</th>
+                        <th>Rating</th>
+                        <th>Reviews Removed</th>
+                        <th>Action Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Law Firm - Lakeland Branch</td>
+                        <td>Multiple Reviews Removed</td>
+                        <td><span class="rating low">3.2</span></td>
+                        <td>8</td>
+                        <td><span class="badge alert">Urgent</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Coral Gables</td>
+                        <td>Rating Drop</td>
+                        <td><span class="rating low">3.5</span></td>
+                        <td>3</td>
+                        <td><span class="badge alert">High</span></td>
+                    </tr>
+                    <tr>
+                        <td>Law Firm - Fort Myers</td>
+                        <td>Low Rating</td>
+                        <td><span class="rating low">3.4</span></td>
+                        <td>2</td>
+                        <td><span class="badge warning">Medium</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize trend chart
+        const trendCtx = document.getElementById('trendChart').getContext('2d');
+        const trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Nov 14', 'Nov 15', 'Nov 16', 'Nov 17', 'Nov 18', 'Nov 19', 'Nov 20'],
+                datasets: [{
+                    label: 'Reviews Added',
+                    data: [45, 52, 38, 61, 42, 55, 48],
+                    borderColor: 'rgb(102, 126, 234)',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.3
+                }, {
+                    label: 'Reviews Removed',
+                    data: [3, 5, 2, 8, 4, 6, 5],
+                    borderColor: 'rgb(239, 68, 68)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        // Initialize rating distribution chart
+        const ratingCtx = document.getElementById('ratingChart').getContext('2d');
+        const ratingChart = new Chart(ratingCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['5 Stars', '4 Stars', '3 Stars', '2 Stars', '1 Star'],
+                datasets: [{
+                    data: [12458, 8932, 3245, 1897, 1523],
+                    backgroundColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(132, 204, 22)',
+                        'rgb(250, 204, 21)',
+                        'rgb(251, 146, 60)',
+                        'rgb(239, 68, 68)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Function to refresh data
+        function refreshData() {
+            // Show loading state
+            const btn = event.target;
+            btn.textContent = 'Refreshing...';
+            btn.disabled = true;
+            
+            // Simulate data refresh
+            setTimeout(() => {
+                // Update timestamp
+                const now = new Date();
+                const timestamp = now.toLocaleString('en-US', { 
+                    year: 'numeric', 
+                    month: '2-digit', 
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                document.getElementById('lastUpdate').textContent = timestamp;
+                
+                // Reset button
+                btn.textContent = 'Refresh Data';
+                btn.disabled = false;
+                
+                // Show alert if there are critical issues
+                checkAlerts();
+            }, 2000);
+        }
+        
+        // Function to export report
+        function exportReport() {
+            alert('Generating Excel report... This will be downloaded shortly.');
+        }
+        
+        // Function to update time range
+        function updateTimeRange() {
+            const range = document.getElementById('timeRange').value;
+            console.log('Time range changed to:', range);
+            // Here you would update the charts and data based on selected range
+        }
+        
+        // Function to check for alerts
+        function checkAlerts() {
+            const alertBox = document.getElementById('alertBox');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            // Simulate checking for critical alerts
+            const hasAlerts = Math.random() > 0.7; // 30% chance of having alerts
+            
+            if (hasAlerts) {
+                alertMessage.textContent = '8 reviews removed from Lakeland Branch in the last 24 hours. Immediate attention required.';
+                alertBox.classList.add('show');
+                
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    alertBox.classList.remove('show');
+                }, 10000);
+            }
+        }
+        
+        // Check for alerts on page load
+        window.addEventListener('load', () => {
+            checkAlerts();
+        });
+    </script>
+</body>
+</html>
